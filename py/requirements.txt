@@ -1,0 +1,4 @@
+# infra-utility-connect Python dependencies (R0 scaffold)
+# No external LLM imports (no openai/anthropic/litellm/requests)
+# kotoba host provides: datalog, llm (WASM Component Model imports)
+# Test-only: no deps beyond stdlib
