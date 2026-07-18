@@ -1,0 +1,12 @@
+{:repository/id "com-etzhayyim-infra-utility-connect"
+ :repository/category :actor
+ :repository/implementation-owner true
+ :repository/canonical-format :edn
+ :repository/legacy-root-aliases
+ ["20-actors/infra-utility-connect" "20-actors/infra_utility_connect"]
+ :repository/compatibility-identities
+ [{:repository "com-etzhayyim-infra_utility_connect"
+   :policy :distinct-did-redirect-tombstone
+   :implementation-owner false}]
+ :repository/deprecated-languages #{:go :tinygo}
+ :repository/deprecated-language-action :prune-not-port}

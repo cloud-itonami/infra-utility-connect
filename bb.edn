@@ -1,0 +1,3 @@
+{:paths ["src" "test"]
+ :tasks {test {:doc "Run the standalone CLJC suite"
+               :task (load-file "test/infra_utility_connect/test_runner.clj")}}}
