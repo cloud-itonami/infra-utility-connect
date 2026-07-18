@@ -4,6 +4,7 @@
 {:actor/id        "infra-utility-connect"
  :actor/glyph     "💧⚡"
  :actor/tier      :tier-b
+ :actor/integrates ["tatekata"]
  :actor/domain    "infra-utility-connect.etzhayyim.com"
  :actor/purpose   "Utility activation Tier-B actor — coordinates final connections (water, gas, electric, telecom) with service providers post-construction (tatekata handoff). Four-cell Pregel: service_request (mepSignoff + coords) → provider_approval (RPC to utility companies) → meter_install (calibration witness) → activation_test (all services live). Murakumo-only inference via KotobaLLM 127.0.0.1:4000. Settlement is USDC Base L2 + ERC-4337 + TitheRouter 10% (no Stripe/fiat). Compute-only R0; settlement stops at :intent. Member signatures required for real outward actions; platform holds no key."
  :actor/status    :r0
