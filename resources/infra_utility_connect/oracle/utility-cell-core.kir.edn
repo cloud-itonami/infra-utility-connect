@@ -1,0 +1,143 @@
+{:format :kotoba.kir/v4,
+ :signature nil,
+ :functions
+ [{:name unknown-project-id,
+   :params [],
+   :result :string,
+   :effects #{},
+   :body "unknown",
+   :param-types []}
+  {:name phase-init,
+   :params [],
+   :result :string,
+   :effects #{},
+   :body "init",
+   :param-types []}
+  {:name phase-complete,
+   :params [],
+   :result :string,
+   :effects #{},
+   :body "complete",
+   :param-types []}
+  {:name node-process,
+   :params [],
+   :result :string,
+   :effects #{},
+   :body "process",
+   :param-types []}
+  {:name node-end,
+   :params [],
+   :result :string,
+   :effects #{},
+   :body "end",
+   :param-types []}
+  {:name init-state,
+   :params [project-id],
+   :result [:ref :utility-cell-core/CellState],
+   :effects #{},
+   :body
+   (->CellState
+    (->UtilityState
+     (phase-init)
+     (option-value-of
+      [:option :string]
+      project-id
+      (unknown-project-id))
+     0)
+    (node-process)),
+   :param-types [[:option :string]]}
+  {:name process-state,
+   :params [prior],
+   :result [:ref :utility-cell-core/CellState],
+   :effects #{},
+   :body
+   (->CellState
+    (->UtilityState
+     (phase-complete)
+     (record-get
+      [:record
+       :utility-cell-core/UtilityState
+       [[:phase :string] [:project-id :string] [:completion-pct :i64]]]
+      prior
+      :project-id)
+     100)
+    (node-end)),
+   :param-types [[:ref :utility-cell-core/UtilityState]]}
+  {:name run-chain,
+   :params [project-id],
+   :result [:ref :utility-cell-core/CellState],
+   :effects #{},
+   :body
+   (process-state
+    (record-get
+     [:record
+      :utility-cell-core/CellState
+      [[:utility-state [:ref :utility-cell-core/UtilityState]]
+       [:next-node :string]]]
+     (init-state project-id)
+     :utility-state)),
+   :param-types [[:option :string]]}
+  {:name ->UtilityState,
+   :params [phase project-id completion-pct],
+   :result
+   [:record
+    :utility-cell-core/UtilityState
+    [[:phase :string] [:project-id :string] [:completion-pct :i64]]],
+   :effects #{},
+   :body
+   (record-new
+    [:record
+     :utility-cell-core/UtilityState
+     [[:phase :string] [:project-id :string] [:completion-pct :i64]]]
+    phase
+    project-id
+    completion-pct),
+   :param-types [:string :string :i64]}
+  {:name ->CellState,
+   :params [utility-state next-node],
+   :result
+   [:record
+    :utility-cell-core/CellState
+    [[:utility-state [:ref :utility-cell-core/UtilityState]]
+     [:next-node :string]]],
+   :effects #{},
+   :body
+   (record-new
+    [:record
+     :utility-cell-core/CellState
+     [[:utility-state [:ref :utility-cell-core/UtilityState]]
+      [:next-node :string]]]
+    utility-state
+    next-node),
+   :param-types [[:ref :utility-cell-core/UtilityState] :string]}],
+ :oracle-value nil,
+ :schema-identities
+ #:utility-cell-core{:CellState
+                     "7d88a60597ee61bf0b9b4ad78c3177b706e2bd7b202496a859a150ae301d0590",
+                     :UtilityState
+                     "c9889fb67d50b6a634530560f8735c0ffe04bc285d44b08a0b6c74ccb878a07b"},
+ :exports
+ [unknown-project-id
+  phase-init
+  phase-complete
+  node-process
+  node-end
+  init-state
+  process-state
+  run-chain],
+ :schemas
+ #:utility-cell-core{:UtilityState
+                     [:record
+                      :utility-cell-core/UtilityState
+                      [[:phase :string]
+                       [:project-id :string]
+                       [:completion-pct :i64]]],
+                     :CellState
+                     [:record
+                      :utility-cell-core/CellState
+                      [[:utility-state
+                        [:ref :utility-cell-core/UtilityState]]
+                       [:next-node :string]]]},
+ :effects #{},
+ :blocks [],
+ :entry nil}

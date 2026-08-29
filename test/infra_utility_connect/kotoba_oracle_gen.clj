@@ -1,0 +1,65 @@
+(ns infra-utility-connect.kotoba-oracle-gen
+  "Regenerate (or verify) the shipped KIR from `src/**/*.kotoba`.
+
+      clojure -M:kotoba-gen           ; write resources/**/oracle/*.kir.edn
+      clojure -M:kotoba-gen check     ; compile and compare, exit 1 on drift
+
+  Lives under the `:kotoba-gen` alias because the COMPILER lives there and must
+  not reach production: `src/` requires `kotoba.kir` (the interpreter, which
+  runs the shipped artifact) and never `kotoba.compiler.core`.
+
+  What this writes IS what production loads, so nothing here transforms it:
+  one compile call, pretty-printed EDN, no post-processing.
+
+  `check` is not in the default suite -- resolving the compiler is minutes and
+  a large tree, and the default suite is meant to run with the interpreter
+  alone. Run it after editing a `.kotoba`; the default suite cannot tell you
+  that a source and its artifact have drifted, only that the artifact still
+  agrees with the reference implementation."
+  (:require [clojure.java.io :as io]
+            [clojure.pprint :as pp]
+            [infra-utility-connect.kotoba-oracle :as oracle]
+            [kotoba.compiler.core :as compiler]))
+
+(def target
+  "The portable target the shipped KIR is compiled for. KIR is what the
+  interpreter reads; one target has to be the artifact, and naming it once
+  here is what keeps regeneration reproducible."
+  :wasm32-kotoba-v1)
+
+(defn compile-kir [source-path]
+  (let [result (compiler/compile-source (slurp (io/file "src" source-path)) target {})]
+    (or (:kir result)
+        (throw (ex-info "compile-source returned no :kir" {:source source-path})))))
+
+(defn artifact-file [id]
+  (io/file "resources" (oracle/resource-path id)))
+
+(defn write-artifact! [id source-path]
+  (let [out (artifact-file id)]
+    (io/make-parents out)
+    (spit out (with-out-str (pp/pprint (compile-kir source-path))))
+    (.getPath out)))
+
+(defn check-artifact
+  "nil when the shipped artifact is what the source compiles to, else a map
+  saying which way it differs."
+  [id source-path]
+  (let [out (artifact-file id)
+        fresh (compile-kir source-path)]
+    (cond
+      (not (.exists out)) {:oracle id :problem :missing :path (.getPath out)}
+      (not= fresh (read-string (slurp out))) {:oracle id :problem :stale :path (.getPath out)}
+      :else nil)))
+
+(defn -main [& args]
+  (if (= "check" (first args))
+    (let [drift (keep (fn [[id src]] (check-artifact id src)) (sort-by key oracle/cores))]
+      (if (seq drift)
+        (do (run! #(println "DRIFT" (pr-str %)) drift)
+            (shutdown-agents)
+            (System/exit 1))
+        (do (println "SHIPPED-KIR-FRESH" (count oracle/cores))
+            (shutdown-agents))))
+    (do (run! println (mapv (fn [[id src]] (write-artifact! id src)) (sort-by key oracle/cores)))
+        (shutdown-agents))))

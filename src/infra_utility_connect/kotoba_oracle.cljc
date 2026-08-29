@@ -1,0 +1,175 @@
+(ns infra-utility-connect.kotoba-oracle
+  "Runs the shipped decision cores.
+
+  `src/infra_utility_connect/**/*.kotoba` holds the decisions;
+  `resources/infra_utility_connect/oracle/*.kir.edn` is what was compiled from
+  them and what ships. This namespace is the seam, and it decides nothing: it
+  resolves a resource, executes an export, and converts the two values whose
+  host representation differs between runtimes.
+
+  ## Why the artifact and not the source
+
+  Compiling takes the Kotoba compiler, which is minutes and a large dependency
+  tree. Production loads the emitted KIR through `kotoba.kir`, so the decision
+  that ships is the one that ran through the compiler once, in
+  `infra-utility-connect.kotoba-oracle-gen`, and not a re-derivation at start-up.
+
+  ## No fallback
+
+  A missing or unreadable artifact throws. It does not quietly fall back to a
+  host reimplementation of the table -- there no longer is one on this path,
+  and a silent fallback is how a decision stops being the one that shipped.
+
+  ## `:i64` is a different host type on each runtime
+
+  An `:i64` is a JVM `long` under `:clj` and a `js/BigInt` under `:cljs`. The
+  return direction is the dangerous one because it does not throw: a `js/BigInt`
+  read straight into a host map is simply not `=` to the number anything else
+  compares it against. Every `:i64` crossing this seam goes through `i64` or
+  `i64-value`.
+
+  ## Reading the artifact where there is no classpath
+
+  ClojureScript has no classpath but usually has something -- nbb has a
+  filesystem, a Worker has an asset binding. `set-resource-loader!` takes that
+  something as a function, `register-kir!` is its pre-parsed form, and neither
+  is a default: this namespace does not reach for `node:fs` on its own, because
+  one that does cannot be bundled for a runtime without `nodejs_compat`.
+
+  Shape follows `cloud.itonami.app.kotoba-oracle`, which landed this seam
+  first; it is deliberately the same shape so a reader of one can read the
+  other."
+  (:require [clojure.edn :as edn]
+            [kotoba.kir :as ir]
+            #?(:clj [clojure.java.io :as io])))
+
+(def cores
+  "Oracle id -> the .kotoba it was compiled from, under src/."
+  {:utility-cell-core "infra_utility_connect/cells/utility_cell_core.kotoba"})
+
+(defn resource-path [id]
+  (str "infra_utility_connect/oracle/" (name id) ".kir.edn"))
+
+(def ^:private registered
+  "Pre-parsed KIR, for runtimes with no classpath."
+  (atom {}))
+
+(defn register-kir!
+  "Install a parsed KIR for `id`, bypassing the resource read."
+  [id kir]
+  (swap! registered assoc id kir)
+  kir)
+
+(defn deregister-kir!
+  "Drop a registration, so `id` reads the shipped artifact again."
+  [id]
+  (swap! registered dissoc id)
+  nil)
+
+(def ^:private resource-loader
+  "path -> artifact text, for a ClojureScript host with neither a classpath nor
+  a filesystem."
+  (atom nil))
+
+(defn set-resource-loader!
+  "Install `f` : resource-path -> artifact text (or nil). Pass nil to clear."
+  [f]
+  (reset! resource-loader f)
+  f)
+
+(defn- read-artifact [id]
+  #?(:clj
+     (let [path (resource-path id)]
+       (if-let [url (io/resource path)]
+         (edn/read-string (slurp url))
+         (throw (ex-info "shipped decision core is missing -- run `clojure -M:kotoba-gen`"
+                         {:oracle id :path path}))))
+     :cljs
+     (let [path (resource-path id)
+           text (when-let [f @resource-loader] (f path))]
+       (if text
+         (edn/read-string text)
+         (throw (ex-info "no classpath on this runtime -- register-kir! or set-resource-loader! first"
+                         {:oracle id :path path}))))))
+
+(def ^:private cache (atom {}))
+
+(defn kir
+  "The shipped KIR for `id`, read once."
+  [id]
+  ;; A registration wins over the cache: it is an explicit instruction, and a
+  ;; caller that registers after something already read the artifact means the
+  ;; registration, not the read.
+  (or (get @registered id)
+      (get @cache id)
+      (let [loaded (read-artifact id)]
+        (swap! cache assoc id loaded)
+        loaded)))
+
+(defn call
+  "Execute an export of a shipped core. Args and result are guest ABI values;
+  see `option` and `record` for the two that are not plain scalars."
+  [id export args]
+  (ir/execute (kir id) (if (symbol? export) export (symbol (name export))) (vec args)))
+
+;; -- the two guest values that are not plain scalars -------------------------
+
+(def string-option [:option :string])
+
+(defn option
+  "Host nil -> none; anything else -> some, stringified."
+  [s]
+  (if (nil? s) [string-option false] [string-option true (str s)]))
+
+(defn option-value
+  "Payload of a some option, or nil for none."
+  [opt]
+  (when (and (vector? opt) (true? (second opt))) (nth opt 2)))
+
+(defn descriptor
+  "The `[:record name fields]` type a guest record value carries as its head.
+
+  Used to build an argument record of the same type without writing the field
+  list a second time -- a copy in host source is a copy that can disagree."
+  [rec]
+  (nth rec 0))
+
+(defn- field-index [desc k]
+  (let [fields (nth desc 2)
+        idx (first (keep-indexed (fn [i [fk _]] (when (= fk k) i)) fields))]
+    (or idx
+        (throw (ex-info "no such field on guest record"
+                        {:field k :fields (mapv first fields)})))))
+
+(defn field
+  "Field `k` of a guest record value, resolved through the descriptor the guest
+  returned WITH the value rather than by position.
+
+  Position is what a host normally reads, and it is what silently returns the
+  wrong field the day the guest's declaration order changes. The descriptor is
+  right there in the value; there is no reason to guess."
+  [rec k]
+  (nth rec (inc (field-index (descriptor rec) k))))
+
+(defn record
+  "Build a guest record argument: the descriptor, then fields in DECLARED order.
+
+  Declared order, not map order -- a record whose fields are permuted does not
+  match the declared type and is refused."
+  [desc field-values]
+  (into [desc] field-values))
+
+;; -- :i64, which is a different host type on each runtime --------------------
+
+(defn i64
+  "Host integer -> guest `:i64`. Required for an `:i64` inside a record."
+  [n]
+  #?(:clj (long n) :cljs (js/BigInt n)))
+
+(defn i64-value
+  "Guest `:i64` -> host integer.
+
+  The direction that does not throw when it is skipped: an unconverted
+  `js/BigInt` simply is not equal to the number every host comparison uses."
+  [n]
+  #?(:clj (if (number? n) (long n) n) :cljs (js/Number n)))
