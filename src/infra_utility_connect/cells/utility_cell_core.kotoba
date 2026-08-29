@@ -1,0 +1,109 @@
+;; The utility cell's TRANSITION TABLE -- what each Pregel step makes of the
+;; cell's state -- as the thing that runs, rather than as a comment beside a
+;; Clojure implementation of it.
+;;
+;; Contract, in the shape ADR-2608261100 asks for (state + event -> next
+;; state):
+;;
+;;     init-state     (project-id?)      -> CellState   phase "init",     next "process"
+;;     process-state  (prior)            -> CellState   phase "complete", next "end"
+;;     run-chain      (project-id?)      -> CellState   the two composed
+;;
+;; Three cells route through here -- `meter_install`, `service_request` and
+;; `provider_approval` -- because they ask the same question. They were three
+;; byte-identical `.cljc` files before this, which is three places to correct
+;; a table that has one right answer. `activation_test` is the fourth cell of
+;; the same actor and still carries its own copy; routing it here is a
+;; one-line change to its `state_machine.cljc` and nothing else.
+;;
+;; When a cell's real graph lands (`data/cells/<id>.edn` already declares
+;; them, and they differ -- meter_install has six nodes, not two), that cell
+;; takes its own core and stops routing here. Sharing is the current state of
+;; the table, not a claim that the four cells are one cell.
+;;
+;; ## Why the keys are keywords here and strings at the host
+;;
+;; The `.cljc` around this speaks `{"utility_state" {"phase" ... }}` -- string
+;; keys, because the LangGraph state these cells were ported from is a Python
+;; dict and the wire shape is part of what the port promised to keep. Those
+;; strings do not cross into the guest. Here the state is two nominal records
+;; and the host renames the fields on the way out.
+;;
+;; That is a deliberate seam, not a workaround: the string keys are a wire
+;; representation and the four values are the semantics. But it is worth
+;; naming the backend fact behind it, because a reader should not copy the
+;; split for the wrong reason -- measured against this repository's pinned
+;; compiler (2026-08-30), the typed `[:map K V]` family that takes a string
+;; key requires one uniform value type for every entry, and this state mixes
+;; three strings with an `:i64`. `:document` would hold it (it is five nodes,
+;; far under the 256-node bound) but at the cost of the field names being
+;; unchecked. A record checks them.
+;;
+;; Removal condition: if the transition ever has to carry a key the cell does
+;; not know at compile time -- an open bag of provider fields, say -- the
+;; record stops describing it and this moves to `:document`. Nothing about
+;; keeping it a record today is permanent (ADR-2608650000 distinguishes a
+;; backend gap from a safety rule; this is neither, it is a shape choice).
+;;
+;; ## No exception here, by construction
+;;
+;; A missing project id is not an error, it is `unknown` -- the behaviour the
+;; ported Python already had. Nothing in this table can fail, so nothing here
+;; returns `[:result T E]` and nothing throws (Kotoba has neither `throw` nor
+;; `try`, permanently). The host's own failure -- a missing shipped artifact --
+;; is the host's to raise.
+;;
+;; Compiles with an EMPTY required-capability set: no clock, no id generator,
+;; no store. The host supplies the project id it read.
+;;
+;; Parity: test/infra_utility_connect/cells/test_utility_cell_core.cljc
+;; Shipped as: resources/infra_utility_connect/oracle/utility-cell-core.kir.edn
+
+(ns utility-cell-core
+  (:export [unknown-project-id
+            phase-init phase-complete
+            node-process node-end
+            init-state process-state run-chain]))
+
+(defrecord UtilityState
+  [phase :string
+   project-id :string
+   completion-pct :i64])
+
+(defrecord CellState
+  [utility-state [:ref :utility-cell-core/UtilityState]
+   next-node :string])
+
+;; The vocabulary, exported so the host asserts against the guest's spelling
+;; rather than against a second copy of these four literals. A host that
+;; hard-codes "complete" and a guest that stops saying it would disagree in
+;; silence.
+(defn unknown-project-id [] :string "unknown")
+(defn phase-init [] :string "init")
+(defn phase-complete [] :string "complete")
+(defn node-process [] :string "process")
+(defn node-end [] :string "end")
+
+;; Step 1. `project-id` is optional because the caller's state may not carry
+;; one; absence reads as `unknown` HERE rather than at the host, so the
+;; default is part of the table and not part of the map-reading around it.
+(defn init-state [project-id [:option :string]] [:ref :utility-cell-core/CellState]
+  (->CellState
+   (->UtilityState (phase-init)
+                   (option-value-of [:option :string] project-id (unknown-project-id))
+                   0)
+   (node-process)))
+
+;; Step 2. Takes the PRIOR utility state, not the whole cell state: the only
+;; thing this step reads is the project id it must carry forward, and a
+;; parameter that says so cannot be handed a stale `next-node` by mistake.
+(defn process-state [prior [:ref :utility-cell-core/UtilityState]] [:ref :utility-cell-core/CellState]
+  (->CellState
+   (->UtilityState (phase-complete) (:project-id prior) 100)
+   (node-end)))
+
+;; The two composed. The `.cljc` chain folded these with `merge` over an open
+;; map; that fold is the host's, because the openness is the host's -- what
+;; the fold MEANS is this one line.
+(defn run-chain [project-id [:option :string]] [:ref :utility-cell-core/CellState]
+  (process-state (:utility-state (init-state project-id))))
