@@ -13,8 +13,8 @@
   ;; Pinned to the kir the pinned compiler emits for. They have to match: KIR
   ;; is a versioned document, and an interpreter reading a shape its emitter
   ;; did not write is exactly the failure the artifact removes.
-  io.github.kotoba-lang/kotoba-kir
-  {:git/url "https://github.com/kotoba-lang/kotoba-kir.git"
+  io.github.kotoba-lang/osaho
+  {:git/url "https://github.com/kotoba-lang/osaho.git"
    :git/sha "da24cae65e82f91352c5b96b0c58f21a52911277"}}
  :aliases
  {;; Regenerate or verify the shipped KIR. `check` exits 1 on drift.
@@ -32,8 +32,8 @@
    ;; The compiler pin drags OLDER `io-multiformats` / `io-ipld` than the ones
    ;; newest-wins would pick; hold the pair the compiler was built against.
    :override-deps
-   {io.github.kotoba-lang/kotoba-kir
-    {:git/url "https://github.com/kotoba-lang/kotoba-kir.git"
+   {io.github.kotoba-lang/osaho
+    {:git/url "https://github.com/kotoba-lang/osaho.git"
      :git/sha "da24cae65e82f91352c5b96b0c58f21a52911277"}
     io.github.kotoba-lang/io-multiformats
     {:git/url "https://github.com/kotoba-lang/io-multiformats.git"
