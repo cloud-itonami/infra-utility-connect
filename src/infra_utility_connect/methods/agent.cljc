@@ -18,7 +18,7 @@
   written back to the kotoba Datom log (G7). Settlement is USDC on Base L2 + ERC-4337
   + TitheRouter 10% only — no fiat (G8). The platform holds no key; member signs
   each settlement (G9). Compute-only R0; settlement stops at :intent (G10)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ── constants ──────────────────────────────────────────────────────────────────
 (def TITHE_BPS 1000)  ; 10% TitheRouter auto-split (G8), basis points
@@ -138,13 +138,13 @@
         (if (empty? remaining)
           {:approvals approvals :note "all signatures validated (G3)"}
           (let [req-id        (first remaining)
-                req-id-lower  (str/lower-case req-id)
+                req-id-lower  (str/lower req-id)
                 provider-name (or (some (fn [[k _v]] (when (str/includes? req-id-lower k) k))
                                         providers)
                                   "unknown")
                 sig           (str "did:web:"
                                    (str/replace
-                                    (str/lower-case (str/replace provider-name " " "-"))
+                                    (str/lower (str/replace provider-name " " "-"))
                                     " " "-")
                                    ".go.jp/authority/2026-06-02")
                 validation    (validate_provider_sig provider-name sig)]
@@ -154,7 +154,7 @@
                      (conj approvals
                            {:request_id    req-id
                             :provider_sig  sig
-                            :approval_code (str (str/upper-case provider-name) "-2026-06-02-001")
+                            :approval_code (str (str/upper provider-name) "-2026-06-02-001")
                             :sla_date      "2026-06-05T00:00:00Z"
                             :status        "approved"})))))))))
 
@@ -167,7 +167,7 @@
     {:error "approval_ids empty" :blocked true}
     (let [meters
           (mapv (fn [appr-id]
-                  (let [lower      (str/lower-case appr-id)
+                  (let [lower      (str/lower appr-id)
                         meter-type (cond
                                      (str/includes? lower "water")    "water"
                                      (str/includes? lower "gas")      "gas"
@@ -177,7 +177,7 @@
                         sig        (str "did:web:meter-provider.co.jp/" meter-type "/2026-06-03")]
                     {:installation_id   (str "meter." meter-type ".001")
                      :meter_type        meter-type
-                     :serial            (str (str/upper-case meter-type) "-JP-2026-001")
+                     :serial            (str (str/upper meter-type) "-JP-2026-001")
                      :calibration_date  "2026-06-03T09:30:00Z"
                      :ipfs_cert_cid     cid
                      :provider_attest   sig
