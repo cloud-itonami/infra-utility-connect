@@ -1,14 +1,14 @@
-;; `re
-        ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
-        ;; tools.deps takes the NEWEST sha it is shown, so without a floor here
-        ;; this repo silently rides whatever a sibling happens to name.
-        io.github.kotoba-lang/text {:git/sha "73bdb13ae7a3d004b44bca08be03a3191157a38f"}
-       sources` carries the shipped decision-core KIR that
+;; `resources` carries the shipped decision-core KIR that
 ;; `infra-utility-connect.kotoba-oracle` executes; it is on the default path
 ;; because production reads it, not just tests.
 {:paths ["src" "test" "resources"]
  :deps
- {;; The KIR interpreter is a RUNTIME dependency: `kotoba-oracle` executes
+ {
+        ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:
+        ;; tools.deps takes the NEWEST sha it is shown, so without a floor here
+        ;; this repo silently rides whatever a sibling happens to name.
+        io.github.kotoba-lang/text {:git/sha "73bdb13ae7a3d004b44bca08be03a3191157a38f"}
+       ;; The KIR interpreter is a RUNTIME dependency: `kotoba-oracle` executes
   ;; `resources/infra_utility_connect/oracle/*.kir.edn` through it, so the
   ;; transition table in `src/**/utility_cell_core.kotoba` is what this actor
   ;; RUNS rather than what a test compares against. The COMPILER stays in the
