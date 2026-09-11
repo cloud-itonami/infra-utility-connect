@@ -1,4 +1,4 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; infra-utility-connect インフラ接続 — ingest seed.edn into a live kotoba node (cljc port of ingest_mcp.py).
 ;; ADR-2605250900.
 (ns infra-utility-connect.kotoba.ingest-mcp

@@ -1,10 +1,10 @@
-;; Superseded. `run_tests.sh` runs `clojure -M:test`, because the suite now
+;; Superseded. `run_tests.sh` runs `kbb -M:test`, because the suite now
 ;; executes the shipped decision core through the `kotoba.kir` git dep in
 ;; deps.edn, which this file does not declare. `bb` is retired in this
 ;; workspace (ADR-2607173000) and is not installed on the machines that run
 ;; these tests; the task below is kept only so an old invocation fails loudly
 ;; rather than appearing to have run nothing.
 {:paths ["src" "test"]
- :tasks {test {:doc "Superseded -- use ./run_tests.sh (clojure -M:test)"
-               :task (do (println "bb is retired here; run ./run_tests.sh")
+ :tasks {test {:doc "Superseded -- use ./run_tests.sh (kbb -M:test)"
+               :task (do (println "kbb -M:is retired here; run ./run_tests.sh")
                          (System/exit 2))}}}
