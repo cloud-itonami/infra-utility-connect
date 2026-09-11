@@ -1,8 +1,8 @@
 (ns infra-utility-connect.kotoba-oracle-gen
   "Regenerate (or verify) the shipped KIR from `src/**/*.kotoba`.
 
-      clojure -M:kotoba-gen           ; write resources/**/oracle/*.kir.edn
-      clojure -M:kotoba-gen check     ; compile and compare, exit 1 on drift
+      kbb -M:kotoba-gen           ; write resources/**/oracle/*.kir.edn
+      kbb -M:kotoba-gen check     ; compile and compare, exit 1 on drift
 
   Lives under the `:kotoba-gen` alias because the COMPILER lives there and must
   not reach production: `src/` requires `kotoba.kir` (the interpreter, which
