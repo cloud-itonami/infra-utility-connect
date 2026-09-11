@@ -53,4 +53,4 @@
   ;; means the artifact agrees with the reference, never that the source and
   ;; the artifact agree. For that, `clojure -M:kotoba-gen check`.
   :test
-  {:main-opts ["-e" "(load-file \"test/infra_utility_connect/test_runner.clj\")"]}}}
+  {:main-opts ["-e" "(load-file \"test/infra_utility_connect/test_runner.cljk\")"]}}}
