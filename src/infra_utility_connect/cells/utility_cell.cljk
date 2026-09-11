@@ -34,7 +34,7 @@
 
   ## Equivalence
 
-  `test/infra_utility_connect/cells/test_utility_cell_core.cljc` keeps the
+  `test/infra_utility_connect/cells/test_utility_cell_core.cljk` keeps the
   original pure-Clojure transitions as a reference implementation and requires
   the shipped guest to agree with them over a corpus. The reference is the
   check; the guest is the semantics."

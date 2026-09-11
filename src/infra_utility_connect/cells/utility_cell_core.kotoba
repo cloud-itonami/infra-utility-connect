@@ -56,7 +56,7 @@
 ;; Compiles with an EMPTY required-capability set: no clock, no id generator,
 ;; no store. The host supplies the project id it read.
 ;;
-;; Parity: test/infra_utility_connect/cells/test_utility_cell_core.cljc
+;; Parity: test/infra_utility_connect/cells/test_utility_cell_core.cljk
 ;; Shipped as: resources/infra_utility_connect/oracle/utility-cell-core.kir.edn
 
 (ns utility-cell-core
