@@ -39,7 +39,7 @@
   Shape follows `cloud.itonami.app.kotoba-oracle`, which landed this seam
   first; it is deliberately the same shape so a reader of one can read the
   other."
-  (:require [clojure.edn :as edn]
+  (:require [kotoba.lang.edn :as edn]
             [kotoba.kir :as ir]
             #?(:clj [clojure.java.io :as io])))
 
