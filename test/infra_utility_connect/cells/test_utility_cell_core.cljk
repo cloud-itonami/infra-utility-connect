@@ -25,7 +25,7 @@
 
   Breaking one branch of the `.kotoba` and regenerating the artifact turns
   this red; that was measured, in both directions, before it landed."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [infra-utility-connect.cells.utility-cell :as uc]
             [infra-utility-connect.kotoba-oracle :as oracle]))
 

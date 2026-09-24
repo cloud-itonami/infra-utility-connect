@@ -1,6 +1,6 @@
 (ns infra-utility-connect.cells.activation-test.test-state-machine
   "Tests for infra-utility-connect activation_test state machine."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [infra-utility-connect.cells.activation-test.state-machine :as sm]))
 
 (deftest chain-reaches-complete

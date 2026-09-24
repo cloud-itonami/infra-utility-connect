@@ -1,4 +1,4 @@
-(require '[clojure.test :as t]
+(require '[kotoba.test :as t]
          'infra-utility-connect.methods.test-agent
          'infra-utility-connect.cells.test-utility-cell-core
          'infra-utility-connect.cells.activation-test.test-state-machine
