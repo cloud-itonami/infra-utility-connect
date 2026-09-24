@@ -17,7 +17,7 @@
   that a source and its artifact have drifted, only that the artifact still
   agrees with the reference implementation."
   (:require [clojure.java.io :as io]
-            [clojure.pprint :as pp]
+            [kotoba.pprint :as pp]
             [infra-utility-connect.kotoba-oracle :as oracle]
             [kotoba.compiler.core :as compiler]))
 
