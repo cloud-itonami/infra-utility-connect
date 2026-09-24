@@ -1,6 +1,6 @@
 (ns infra-utility-connect.cells.meter-install.test-state-machine
   "Tests for infra-utility-connect meter_install state machine."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [infra-utility-connect.cells.meter-install.state-machine :as sm]))
 
 (deftest chain-reaches-complete

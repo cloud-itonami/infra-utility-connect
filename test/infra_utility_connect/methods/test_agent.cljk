@@ -6,7 +6,7 @@
   USDC + tithe settlement (G8/G9).
 
   Values copied VERBATIM from test_agent.py expected results."
-  (:require [clojure.test :refer [deftest is testing run-tests]]
+  (:require [kotoba.test :refer [deftest is testing run-tests]]
             [infra-utility-connect.methods.agent :as agent]))
 
 ;; ── G3 — provider signature validation ───────────────────────────────────────
