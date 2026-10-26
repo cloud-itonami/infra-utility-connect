@@ -50,8 +50,9 @@
   ;; is a versioned document, and an interpreter reading a shape its emitter
   ;; did not write is exactly the failure the artifact removes.
   io.github.kotoba-lang/osaho
-  {:git/url "https://github.com/kotoba-lang/osaho.git"
-   :git/sha "da24cae65e82f91352c5b96b0c58f21a52911277"}}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "38654600c00caea2caec9ec0650625f2f6a69378"
+         :deps/root "lib/kotoba.osaho"}}
  :aliases
  {;; Regenerate or verify the shipped KIR. `check` exits 1 on drift.
   ;;
@@ -69,11 +70,13 @@
    ;; newest-wins would pick; hold the pair the compiler was built against.
    :override-deps
    {io.github.kotoba-lang/osaho
-    {:git/url "https://github.com/kotoba-lang/osaho.git"
-     :git/sha "da24cae65e82f91352c5b96b0c58f21a52911277"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "38654600c00caea2caec9ec0650625f2f6a69378"
+         :deps/root "lib/kotoba.osaho"}
     io.github.kotoba-lang/io-multiformats
-    {:git/url "https://github.com/kotoba-lang/io-multiformats.git"
-     :git/sha "e7ae323d3ccbb9aacc92edfd2f3dda20d9b90eed"}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "38654600c00caea2caec9ec0650625f2f6a69378"
+         :deps/root "lib/kotoba.ioMultiformats"}
     io.github.kotoba-lang/io-ipld
         {:git/url "https://github.com/kotoba-lang/kotoba.git"
          :git/sha "325baa31020aa214bd17cb39e3803712f92f5a1a"
