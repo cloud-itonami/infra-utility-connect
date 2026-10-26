@@ -61,8 +61,9 @@
     {:git/url "https://github.com/kotoba-lang/io-multiformats.git"
      :git/sha "e7ae323d3ccbb9aacc92edfd2f3dda20d9b90eed"}
     io.github.kotoba-lang/io-ipld
-    {:git/url "https://github.com/kotoba-lang/io-ipld.git"
-     :git/sha "c7b8f76b707ec22fa1692907201d44db54d98f13"}}
+        {:git/url "https://github.com/kotoba-lang/kotoba.git"
+         :git/sha "325baa31020aa214bd17cb39e3803712f92f5a1a"
+         :deps/root "lib/kotoba.ioIpld"}}
    :main-opts ["-m" "infra-utility-connect.kotoba-oracle-gen"]}
 
   ;; The standalone suite. Runs against the SHIPPED artifact and the
